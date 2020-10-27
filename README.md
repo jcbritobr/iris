@@ -19,3 +19,9 @@
 * **Versicolor specie** sepal, petal width and length are between Virginica and Setosa's size.
 
 ![](images/versicolor_hist.png)
+
+* Species relationship analysis by using a scatter plot
+
+  We can see in this plot that **Setosa** specie characteristics is very different from **Virginica** and **Versicolor**. They are apart from other species in this plot.
+
+![](images/species_relationship.png)
