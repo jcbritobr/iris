@@ -10,12 +10,12 @@
 
 * **Setosa specie** sepal and petal characteristics. Setosa has the larger sepals among the others being analyzed in this document. 
 
-![Setosa](images\setosa_hist.png)
+![Setosa](images/setosa_hist.png)
 
 * **Virginica specie** sepal and petal characteristics. I has longest sepals among the other species in this document. 
 
-![](images\virginica_hist.png)
+![](images/virginica_hist.png)
 
 * **Versicolor specie** sepal, petal width and length are between Virginica and Setosa's width and length.
 
-![](images\versicolor_hist.png)
+![](images/versicolor_hist.png)
