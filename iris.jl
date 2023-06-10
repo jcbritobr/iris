@@ -1,8 +1,161 @@
+### A Pluto.jl notebook ###
+# v0.19.26
+
+using Markdown
+using InteractiveUtils
+
+# ╔═╡ 5ce1945c-0617-11ee-160d-033aab463359
+using DataFrames, Plots, CSV, PlutoUI, Statistics, StatsBase
+
+# ╔═╡ 88f4d941-8f13-4c39-9dcd-c452e95e3111
+md"""
+# Análise Exploratória de Dados no Dataset Iris
+$(LocalResource("images/iris-cristata.jpg"))
+"""
+
+# ╔═╡ 39c12172-e460-4b3f-ac41-d58c8c409b01
+begin
+	TableOfContents()
+end
+
+# ╔═╡ b6fb42c9-8462-47c1-add3-b8d49aa7f3fa
+md"""
+## Carregar o Dataset
+A primeira tarefa que deve ser feita é carregar o **dataset das espécies de flores iris** em um DataFrame, isto é, uma _estrutura de dados tabular_. A partir dela usaremos estatistica descritiva, algebra linear e machine learning para conseguirmos fazer observações, previsões e algumas conclusões sobre os dados. 
+"""
+
+# ╔═╡ 704ac543-23bc-4789-bf40-31fd9df69dca
+begin
+	irisdf = CSV.read("data/iris.csv", DataFrame)
+	first(irisdf, 5)
+end
+
+# ╔═╡ 74cdf176-b9f3-4a06-8691-ed50788c13cc
+md"""
+## Considerações Sobre os Dados Carregados
+Podemos observar que o dataset possui _5 variáveis_, sendo a última delas, **categórica**. Temos _largura e comprimento_ das **sépalas** em cm, _largura e comprimento_ das **pétalas** em cm. Por último espécies, no qual se dividem entre **setosa**, **virginica** e **versicolor**. Também temos 150 observações, 50 para cada espécie. 3 duplicatas foram encontrada, e nenhuma entrada nula.
+"""
+
+# ╔═╡ c21f198a-bc48-4fee-a3e6-e4853191c562
+let
+	setosa = count((x) -> x == "Iris-setosa", irisdf.species)
+	@show setosa
+	virginica = count((x) -> x == "Iris-virginica", irisdf.species)
+	@show virginica
+	versicolor = count((x)-> x == "Iris-versicolor", irisdf.species)
+	@show virginica
+	len = nrow(irisdf)
+	@show len
+	duplicates = length(findall(nonunique(irisdf)))
+	@show duplicates
+
+	bar(countmap(irisdf.species), legend=:none, c=[1, 2, 3], size=(400, 300))
+	title!("Contagem das Espécies")
+	ylabel!("Contagem" )
+end
+
+# ╔═╡ 471a66e9-5602-4903-bd0e-559d8cdf8995
+md"""
+## Análise Univariada
+Podemos observar os valores mínimos, médios, medianos e máximos do dataset. É possível perceber que nenhum dado foi perdido ou está ausente. Das espécies a maior mediana se encontra no **comprimento da sépala**, o que nos mostra que as sépalas sempre serão mais compridas que as pétalas. Também as sépalas serão mais largas que as pétalas.
+O comprimento das pétalas apresenta maior desvio, ou seja, dos dados apresentam maior dispersão, o que nos leva a concluir que existem pétalas com de variados comprimentos. A variável largura da sépala se apresenta mais homogênea.
+"""
+
+# ╔═╡ c3755ddd-777d-4f84-88b5-c52f81815032
+let
+	@info describe(irisdf)
+	stdslength = std(irisdf.slength)
+	@show stdslength
+	stdswidth = std(irisdf.swidth)
+	@show stdswidth
+	stdplength = std(irisdf.plength)
+	@show stdplength
+	stdpwidth = std(irisdf.pwidth)
+	@show stdpwidth
+	nothing
+end
+
+# ╔═╡ 973afb76-c7ad-4e9c-815d-ddf391dc086a
+let
+	setosasl = mean(irisdf[irisdf[!, :species] .== "Iris-setosa", :slength])
+	@show setosasl
+	virginicasl = mean(irisdf[irisdf[!, :species] .== "Iris-virginica", :slength])
+	@show virginicasl
+	versicolorsl = mean(irisdf[irisdf[!, :species] .== "Iris-versicolor", :slength])
+	@show versicolorsl
+	
+	bar([setosasl, versicolorsl, virginicasl], legend=:none, size=(400, 300),
+		c = [1, 2, 3], xticks=(1:3, [:setosa, :versicolor, :virginica]),
+		ylabel="Media", title="Comprimento da Sépala"
+	)
+end
+
+# ╔═╡ 580d37f1-bf09-4952-8072-690af699fb03
+md"""
+## Análise Bivariada
+Tentaremos encontrar um relacionamento entre duas variáveis do dataset.
+* As sépalas mais largas são as das setosas.
+* As sépalas mais compridas são as das virginicas.
+* As sepalas mais homogêneas são as das versicolors.
+"""
+
+# ╔═╡ f342a505-9311-4a2f-af2c-5ea9ee8b4861
+let
+	setosasl = irisdf[irisdf[!, :species] .== "Iris-setosa", :slength]
+	setosasw = irisdf[irisdf[!, :species] .== "Iris-setosa", :swidth]
+	virginicasl = irisdf[irisdf[!, :species] .== "Iris-virginica", :slength]
+	virginicasw = irisdf[irisdf[!, :species] .== "Iris-virginica", :swidth]
+	versicolorsl = irisdf[irisdf[!, :species] .== "Iris-versicolor", :slength]
+	versicolorsw = irisdf[irisdf[!, :species] .== "Iris-versicolor", :swidth]
+	
+	scatter(setosasl, setosasw, label="Iris-setosa", msw=0)
+	scatter!(versicolorsl, versicolorsw, label="Iris-versicolor", msw=0)
+	scatter!(virginicasl, virginicasw, label="Iris-virginica", msw=0)
+	xlabel!("Comprimento da Sépala")
+	ylabel!("Largura da Sépala")
+end
+
+# ╔═╡ 20dd8b05-56af-4d8a-a87f-b69586059fa7
+md"""
+## Análise Multivariada
+Utilizaremos uma matriz de correlação(Pearson) para tentar encontrar correlações lineares entre as variáveis.
+Podemos observar que as variáveis comprimento da sépala x comprimento da pétala, largura da sépala x comprimento da pétala possuem correlação linear positiva forte, o que possibilita a criação e emprego de modelos lineares de regressão.
+"""
+
+# ╔═╡ 742d57dc-a846-4c7b-b6ca-668bd0eeae5c
+let
+	cols = [:slength, :swidth, :plength, :pwidth]
+	m = Matrix(irisdf[!, cols])
+	r, c = size(m)
+	corm = cor(m)
+	heatmap(corm, yflip=true, yticks=(1:r, cols), xticks=(1:c, cols))
+end
+
+# ╔═╡ 00000000-0000-0000-0000-000000000001
+PLUTO_PROJECT_TOML_CONTENTS = """
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
+[compat]
+CSV = "~0.10.11"
+DataFrames = "~1.5.0"
+Plots = "~1.38.15"
+PlutoUI = "~0.7.51"
+StatsBase = "~0.34.0"
+"""
+
+# ╔═╡ 00000000-0000-0000-0000-000000000002
+PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
 julia_version = "1.9.1"
 manifest_format = "2.0"
-project_hash = "195fa75b56e477695524372b5f329ef1d98c7e31"
+project_hash = "e15ad284a855a1c45cd52d6b4cfc956f8f9931fd"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -94,12 +247,6 @@ git-tree-sha1 = "96d823b94ba8d187a6d8f0826e731195a74b90e9"
 uuid = "f0e56b4a-5159-44fe-b623-3e5288b988bb"
 version = "2.2.0"
 
-[[deps.Configurations]]
-deps = ["ExproniconLite", "OrderedCollections", "TOML"]
-git-tree-sha1 = "62a7c76dbad02fdfdaa53608104edf760938c4ca"
-uuid = "5218b696-f38b-4ac9-8b61-a12ec717816d"
-version = "0.17.4"
-
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]
 git-tree-sha1 = "738fec4d684a9a6ee9598a8bfee305b26831f28c"
@@ -156,10 +303,6 @@ git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
 
-[[deps.Distributed]]
-deps = ["Random", "Serialization", "Sockets"]
-uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
-
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
 git-tree-sha1 = "2fb1e02f2b635d0845df5d7c167fec4dd739b00d"
@@ -176,12 +319,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "bad72f730e9e91c08d9427d5e8db95478a3c323d"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
 version = "2.4.8+0"
-
-[[deps.ExproniconLite]]
-deps = ["Pkg", "TOML"]
-git-tree-sha1 = "c2eb763acf6e13e75595e0737a07a0bec0ce2147"
-uuid = "55351af7-c7e9-48d6-89ff-24e801d99491"
-version = "0.7.11"
 
 [[deps.FFMPEG]]
 deps = ["FFMPEG_jll"]
@@ -237,12 +374,6 @@ version = "1.0.10+0"
 [[deps.Future]]
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
-
-[[deps.FuzzyCompletions]]
-deps = ["REPL"]
-git-tree-sha1 = "e16dd964b4dfaebcded16b2af32f05e235b354be"
-uuid = "fb4132e2-a121-4a70-b8a1-d5b831dcdcc2"
-version = "0.5.1"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -401,11 +532,6 @@ version = "0.16.0"
     DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
     SymEngine = "123dc426-2d89-5057-bbad-38513e3affd8"
 
-[[deps.LazilyInitializedFields]]
-git-tree-sha1 = "410fe4739a4b092f2ffe36fcb0dcc3ab12648ce1"
-uuid = "0e77f7df-68c5-4e49-93ce-4cd80f5598bf"
-version = "1.2.1"
-
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
@@ -549,12 +675,6 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2022.10.11"
 
-[[deps.MsgPack]]
-deps = ["Serialization"]
-git-tree-sha1 = "fc8c15ca848b902015bd4a745d350f02cf791c2a"
-uuid = "99f44e22-a591-53d1-9472-aa23ef4bd671"
-version = "1.2.0"
-
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "0877504529a3e5c3343c6f8b4c0381e57e4387e4"
@@ -669,12 +789,6 @@ version = "1.38.15"
     ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
-[[deps.Pluto]]
-deps = ["Base64", "Configurations", "Dates", "Distributed", "FileWatching", "FuzzyCompletions", "HTTP", "HypertextLiteral", "InteractiveUtils", "Logging", "LoggingExtras", "MIMEs", "Markdown", "MsgPack", "Pkg", "PrecompileSignatures", "PrecompileTools", "REPL", "RegistryInstances", "RelocatableFolders", "Sockets", "TOML", "Tables", "URIs", "UUIDs"]
-git-tree-sha1 = "c4c4dac5c1332ab510e145eea59382847c51a6fb"
-uuid = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
-version = "0.19.26"
-
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
 git-tree-sha1 = "b478a748be27bd2f2c73a7690da219d0844db305"
@@ -686,11 +800,6 @@ deps = ["DataAPI", "Future"]
 git-tree-sha1 = "a6062fe4063cdafe78f4a0a81cfffb89721b30e7"
 uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 version = "1.4.2"
-
-[[deps.PrecompileSignatures]]
-git-tree-sha1 = "18ef344185f25ee9d51d80e179f8dad33dc48eb1"
-uuid = "91cefc8d-f054-46dc-8f8c-26e11d7c5411"
-version = "3.0.3"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -744,12 +853,6 @@ version = "0.6.12"
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "1.2.2"
-
-[[deps.RegistryInstances]]
-deps = ["LazilyInitializedFields", "Pkg", "TOML", "Tar"]
-git-tree-sha1 = "ffd19052caf598b8653b99404058fce14828be51"
-uuid = "2792f1a3-b283-48e8-9a74-f99dce5104f3"
-version = "0.1.0"
 
 [[deps.RelocatableFolders]]
 deps = ["SHA", "Scratch"]
@@ -1175,3 +1278,22 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Wayland_jll", "Wayland_prot
 git-tree-sha1 = "9ebfc140cc56e8c2156a15ceac2f0302e327ac0a"
 uuid = "d8fb68d0-12a3-5cfd-a85a-d49703b185fd"
 version = "1.4.1+0"
+"""
+
+# ╔═╡ Cell order:
+# ╠═5ce1945c-0617-11ee-160d-033aab463359
+# ╠═88f4d941-8f13-4c39-9dcd-c452e95e3111
+# ╠═39c12172-e460-4b3f-ac41-d58c8c409b01
+# ╠═b6fb42c9-8462-47c1-add3-b8d49aa7f3fa
+# ╠═704ac543-23bc-4789-bf40-31fd9df69dca
+# ╠═74cdf176-b9f3-4a06-8691-ed50788c13cc
+# ╠═c21f198a-bc48-4fee-a3e6-e4853191c562
+# ╠═471a66e9-5602-4903-bd0e-559d8cdf8995
+# ╠═c3755ddd-777d-4f84-88b5-c52f81815032
+# ╠═973afb76-c7ad-4e9c-815d-ddf391dc086a
+# ╠═580d37f1-bf09-4952-8072-690af699fb03
+# ╠═f342a505-9311-4a2f-af2c-5ea9ee8b4861
+# ╠═20dd8b05-56af-4d8a-a87f-b69586059fa7
+# ╠═742d57dc-a846-4c7b-b6ca-668bd0eeae5c
+# ╟─00000000-0000-0000-0000-000000000001
+# ╟─00000000-0000-0000-0000-000000000002
