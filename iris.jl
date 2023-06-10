@@ -10,7 +10,7 @@ using DataFrames, Plots, CSV, PlutoUI, Statistics, StatsBase
 # ╔═╡ 88f4d941-8f13-4c39-9dcd-c452e95e3111
 md"""
 # Análise Exploratória de Dados no Dataset Iris
-$(LocalResource("images/iris-cristata.jpg"))
+$(LocalResource("images/Iris-meaning.jpg"))
 """
 
 # ╔═╡ 39c12172-e460-4b3f-ac41-d58c8c409b01
@@ -48,17 +48,20 @@ let
 	@show len
 	duplicates = length(findall(nonunique(irisdf)))
 	@show duplicates
-
-	bar(countmap(irisdf.species), legend=:none, c=[1, 2, 3], size=(400, 300))
-	title!("Contagem das Espécies")
-	ylabel!("Contagem" )
+    nothing
 end
 
 # ╔═╡ 471a66e9-5602-4903-bd0e-559d8cdf8995
 md"""
 ## Análise Univariada
-Podemos observar os valores mínimos, médios, medianos e máximos do dataset. É possível perceber que nenhum dado foi perdido ou está ausente. Das espécies a maior mediana se encontra no **comprimento da sépala**, o que nos mostra que as sépalas sempre serão mais compridas que as pétalas. Também as sépalas serão mais largas que as pétalas.
+Podemos observar os valores mínimos, médios, medianos e máximos do dataset. É possível perceber que nenhum dado foi perdido ou está ausente. Das espécies a maior mediana se encontra no **comprimento da sépala**, o que nos mostra que as sépalas sempre serão em média, mais compridas que as pétalas. Também as sépalas serão mais largas que as pétalas.
 O comprimento das pétalas apresenta maior desvio, ou seja, dos dados apresentam maior dispersão, o que nos leva a concluir que existem pétalas com de variados comprimentos. A variável largura da sépala se apresenta mais homogênea.
+
+Concluímos pelos histogramas que:
+
+* **Virginicas** possuem sépalas mais compridas e pétalas mais largas
+* **Setosas** possuem sépalas mais largas
+* **Versicolors** possuem sépalas e pétalas homogêneas
 """
 
 # ╔═╡ c3755ddd-777d-4f84-88b5-c52f81815032
@@ -75,44 +78,73 @@ let
 	nothing
 end
 
+# ╔═╡ 667b9a7e-463c-449c-91c3-b494cca8180a
+md"### Histograma"
+
+# ╔═╡ ca0e3113-2124-4ed9-8acd-fcde5ef28aa8
+let
+	bar(countmap(irisdf.species), legend=:none, c=[1, 2, 3], size=(400, 300))
+	title!("Histograma")
+	ylabel!("Contagem" )
+end
+
 # ╔═╡ 973afb76-c7ad-4e9c-815d-ddf391dc086a
 let
-	setosasl = mean(irisdf[irisdf[!, :species] .== "Iris-setosa", :slength])
-	@show setosasl
-	virginicasl = mean(irisdf[irisdf[!, :species] .== "Iris-virginica", :slength])
-	@show virginicasl
-	versicolorsl = mean(irisdf[irisdf[!, :species] .== "Iris-versicolor", :slength])
-	@show versicolorsl
-	
-	bar([setosasl, versicolorsl, virginicasl], legend=:none, size=(400, 300),
-		c = [1, 2, 3], xticks=(1:3, [:setosa, :versicolor, :virginica]),
-		ylabel="Media", title="Comprimento da Sépala"
-	)
+    function getMeanBySpecies(var::Symbol)::Dict{AbstractString, Float64}
+        setosa = median(irisdf[irisdf[!, :species] .== "Iris-setosa", var])
+        virginica = median(irisdf[irisdf[!, :species] .== "Iris-virginica", var])
+        versicolor = median(irisdf[irisdf[!, :species] .== "Iris-versicolor", var])
+        Dict("Setosa" => setosa, "Virginica" => virginica, "Versicolor" => versicolor)
+    end
+
+    slength = getMeanBySpecies(:slength)
+    swidth = getMeanBySpecies(:swidth)
+    plength = getMeanBySpecies(:plength)
+    pwidth = getMeanBySpecies(:pwidth)
+
+    p1 = bar(slength, legend = :none, c=[1, 2, 3],
+            ylabel="Sépala Comprimento (cm)");
+    p2 = bar(swidth, legend = :none, c=[1, 2, 3],
+            ylabel="Sépala Largura (cm)");
+    p3 = bar(plength, legend = :none, c=[1, 2, 3],
+            ylabel="Pétala Comprimento (cm)");
+    p4 = bar(slength, legend = :none, c=[1, 2, 3],
+            ylabel="Pétala Largura (cm)");
+
+    plot(p1, p2, p3, p4, layout=(2, 2), size=(500, 550))
 end
 
 # ╔═╡ 580d37f1-bf09-4952-8072-690af699fb03
 md"""
 ## Análise Bivariada
-Tentaremos encontrar um relacionamento entre duas variáveis do dataset.
-* As sépalas mais largas são as das setosas.
-* As sépalas mais compridas são as das virginicas.
-* As sepalas mais homogêneas são as das versicolors.
+Analisaremos o relacionamento entre duas variáveis do dataset: **largura da sépala** e **comprimento da sépala**. usando uma visualização de dispersão conseguimos ter uma idéia de como essas váriáveis estão agrupadas.
 """
 
 # ╔═╡ f342a505-9311-4a2f-af2c-5ea9ee8b4861
 let
-	setosasl = irisdf[irisdf[!, :species] .== "Iris-setosa", :slength]
-	setosasw = irisdf[irisdf[!, :species] .== "Iris-setosa", :swidth]
-	virginicasl = irisdf[irisdf[!, :species] .== "Iris-virginica", :slength]
-	virginicasw = irisdf[irisdf[!, :species] .== "Iris-virginica", :swidth]
-	versicolorsl = irisdf[irisdf[!, :species] .== "Iris-versicolor", :slength]
-	versicolorsw = irisdf[irisdf[!, :species] .== "Iris-versicolor", :swidth]
-	
-	scatter(setosasl, setosasw, label="Iris-setosa", msw=0)
-	scatter!(versicolorsl, versicolorsw, label="Iris-versicolor", msw=0)
-	scatter!(virginicasl, virginicasw, label="Iris-virginica", msw=0)
-	xlabel!("Comprimento da Sépala")
-	ylabel!("Largura da Sépala")
+    function getVariableBySpecie(var::Symbol, s::AbstractString)::Vector{Float64}
+        data = Vector{Float64}[]
+        if var == :slength
+            data = copy(irisdf.slength[irisdf.species .== s])
+        elseif var == :swidth
+            data = copy(irisdf.swidth[irisdf.species .== s])
+        end
+        data
+    end
+    slsetosa = getVariableBySpecie(:slength, "Iris-setosa")
+    slvirginica = getVariableBySpecie(:slength, "Iris-virginica")
+    slversicolor = getVariableBySpecie(:slength, "Iris-versicolor")
+
+    swsetosa = getVariableBySpecie(:swidth, "Iris-setosa")
+    swvirginica = getVariableBySpecie(:swidth, "Iris-virginica")
+    swversicolor = getVariableBySpecie(:swidth, "Iris-versicolor")
+
+    scatter(slversicolor, swversicolor, msw=0, label="Iris-versicolor")
+    scatter!(slsetosa, swsetosa, msw=0, label="Iris-setosa")
+    scatter!(slvirginica, swvirginica, msw=0, label="Iris-virginica")
+    xlabel!("Comprimento da Sépala (cm)")
+    ylabel!("Largura da Sépala (cm)")
+
 end
 
 # ╔═╡ 20dd8b05-56af-4d8a-a87f-b69586059fa7
@@ -120,15 +152,19 @@ md"""
 ## Análise Multivariada
 Utilizaremos uma matriz de correlação(Pearson) para tentar encontrar correlações lineares entre as variáveis.
 Podemos observar que as variáveis comprimento da sépala x comprimento da pétala, largura da sépala x comprimento da pétala possuem correlação linear positiva forte, o que possibilita a criação e emprego de modelos lineares de regressão.
+* Na minha opinião, é muito mais fácil entender uma matriz de correlação, do que um plot em pares (pair plot).
 """
 
 # ╔═╡ 742d57dc-a846-4c7b-b6ca-668bd0eeae5c
 let
 	cols = [:slength, :swidth, :plength, :pwidth]
-	m = Matrix(irisdf[!, cols])
-	r, c = size(m)
-	corm = cor(m)
-	heatmap(corm, yflip=true, yticks=(1:r, cols), xticks=(1:c, cols))
+	M = Matrix(irisdf[!, cols])
+	corm = cor(M)
+	(n, m) = size(corm)
+	heatmap(corm, yflip=true, yticks=(1:m, cols), xticks=(1:n, cols))
+	annotate!(
+		[(j, i, text(round(corm[i, j], digits=3), 12, :gray)) for i in 1:n for j in 1:m]
+	)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1290,6 +1326,8 @@ version = "1.4.1+0"
 # ╠═c21f198a-bc48-4fee-a3e6-e4853191c562
 # ╠═471a66e9-5602-4903-bd0e-559d8cdf8995
 # ╠═c3755ddd-777d-4f84-88b5-c52f81815032
+# ╠═667b9a7e-463c-449c-91c3-b494cca8180a
+# ╠═ca0e3113-2124-4ed9-8acd-fcde5ef28aa8
 # ╠═973afb76-c7ad-4e9c-815d-ddf391dc086a
 # ╠═580d37f1-bf09-4952-8072-690af699fb03
 # ╠═f342a505-9311-4a2f-af2c-5ea9ee8b4861
